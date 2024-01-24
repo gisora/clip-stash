@@ -11,6 +11,7 @@ path = "src/lib/mod.rs"
 
 [dependencies]
 chrono = { version = "0.4.32", features = ["serde"] }
+derive_more = "0.99.17"
 serde = "1.0.195"
 serde_json = "1.0.111"
 thiserror = "1.0.56"
