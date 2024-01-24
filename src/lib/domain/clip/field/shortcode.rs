@@ -1,4 +1,4 @@
-use crate::domain::{self, clip::{field::shortcode, ClipError}}:clip::ClipError;
+use crate::domain::clip::ClipError;
 use derive_more::From;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
