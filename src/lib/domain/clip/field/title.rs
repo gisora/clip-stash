@@ -6,17 +6,17 @@ use std::str::FromStr;
 pub struct Title(Option<String>);
 
 impl Title {
-    pub fn new<T: Into<Option<String>>> (title: T) -> Result<Self, ClipError> {
+    pub fn new<T: Into<Option<String>>> (title: T) -> Self {
         let title: Option<String> = title.into();
         match title {
             Some(title) => {
                 if !title.trim().is_empty() {
-                    Ok(Self(Some(title)))
+                    Self(Some(title))
                 } else {
-                    Ok(Self(None))
+                    Self(None)
                 }
             }
-            None => Ok(Self(None))
+            None => Self(None)
         }
     }
 
