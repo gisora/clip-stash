@@ -18,8 +18,8 @@ pub struct Clip {
 impl TryFrom<Clip> for crate::domain::Clip {
     type Error = ClipError;
     fn try_from(clip: Clip) -> Result<Self, Self::Error> {
-        use std::str::FromStr;
         use crate::domain::clip::field;
+        use std::str::FromStr;
         Ok(Self {
             clip_id: field::ClipId::new(DbId::from_str(clip.clip_id.as_str())?),
             shortcode: field::ShortCode::from(clip.shortcode),
@@ -31,5 +31,40 @@ impl TryFrom<Clip> for crate::domain::Clip {
             hits: field::Hits::new(u64::try_from(clip.hits)?),
         })
     }
+}
 
+pub struct GetClip {
+    pub(in crate::data) shortcode: String,
+}
+
+impl From<ShortCode> for GetClip {
+    fn from(shortcode: ShortCode) -> Self {
+        GetClip {
+            shortcode: shortcode.into_inner(),
+        }
+    }
+}
+
+impl From<String> for GetClip {
+    fn from(shortcode: String) -> Self {
+        GetClip { shortcode }
+    }
+}
+
+pub struct NewClip {
+    pub(in crate::data) clip_id: String,
+    pub(in crate::data) shortcode: String,
+    pub(in crate::data) content: String,
+    pub(in crate::data) title: Option<String>,
+    pub(in crate::data) posted: i64,
+    pub(in crate::data) expires: Option<NaiveDateTime>,
+    pub(in crate::data) password: Option<String>,
+}
+
+pub struct UpdateClip {
+    pub(in crate::data) shortcode: String,
+    pub(in crate::data) content: String,
+    pub(in crate::data) title: Option<String>,
+    pub(in crate::data) expires: Option<i64>,
+    pub(in crate::data) password: Option<String>,
 }
