@@ -50,11 +50,11 @@ impl PageContext for ViewClip {
 }
 
 #[derive(Debug, Serialize, Constructor)]
-pub struct Passwordrequired{
+pub struct PasswordRequired{
     shortcode: crate::ShortCode,
 }
 
-impl PageContext for Passwordrequired {
+impl PageContext for PasswordRequired {
     fn title(&self) -> &str {
         "Password Required"
     }

@@ -1,14 +1,13 @@
 use crate::data::AppDatabase;
 use crate::service;
 use crate::service::action;
-use crate::web::{ctx, form, renderer::Renderer, PageError};
+use crate::web::{ctx, form, renderer::Renderer, PageError, PASSWORD_COOKIE};
 use crate::{ServiceError, ShortCode};
 use rocket::form::{Contextual, Form};
 use rocket::http::{Cookie, CookieJar, Status};
 use rocket::response::content::{self, Html};
 use rocket::response::{status, Redirect};
 use rocket::{uri, State};
-use sqlx::database;
 
 #[rocket::get("/")]
 fn home(renderer: &State<Renderer<'_>>) -> Html<String> {
@@ -63,12 +62,52 @@ pub async fn get_clip(
         }
         Err(e) => match e {
             ServiceError::PermissionError(_) => {
-                let context = ctx::Passwordrequired::new(shortcode);
+                let context = ctx::PasswordRequired::new(shortcode);
                 render_with_status(Status::Unauthorized, context, renderer)
             }
             ServiceError::NotFound => Err(PageError::NotFound("Clip not found".to_owned())),
             _ => Err(PageError::Internal("server error".to_owned())),
         },
+    }
+}
+
+#[rocket::post("/clip/<shortcode>", data = "<form>")]
+pub async fn submit_clip_password(
+    cookies: &CookieJar<'_>,
+    shortcode: ShortCode,
+    form: Form<Contextual<'_, form::GetPasswordProtectedClip>>,
+    database: &State<AppDatabase>,
+    renderer: &State<Renderer<'_>>,
+) -> Result<Html<String>, PageError> {
+    if let Some(form) = &form.value {
+        let req = service::ask::GetClip {
+            shortcode: shortcode.clone(),
+            password: form.password.clone(),
+        };
+        match action::get_clip(req, database.get_pool()).await {
+            Ok(clip) => {
+                let context = ctx::ViewClip::new(clip);
+                cookies.add(Cookie::new(
+                    PASSWORD_COOKIE,
+                    form.password.clone().into_inner().unwrap_or_default(),
+                ));
+                Ok(Html(renderer.render(context, &[])))
+            }
+            Err(e) => match e {
+                ServiceError::PermissionError(e) => {
+                    let context = ctx::PasswordRequired::new(shortcode);
+                    Ok(Html(renderer.render(context, &[e.as_str()])))
+                }
+                ServiceError::NotFound => Err(PageError::NotFound("Clip not found".to_owned())),
+                _ => Err(PageError::Internal("internal server error".to_owned())),
+            }
+        }
+    } else {
+        let context = ctx::PasswordRequired::new(shortcode);
+        Ok(Html(renderer.render(
+            context,
+            &["A password is required to view this clip"],
+        )))
     }
 }
 
@@ -115,17 +154,11 @@ pub async fn new_clip(
             .collect::<Vec<_>>();
         Err((
             Status::BadRequest,
-            Html(
-                renderer.render_with_data(
-                    ctx::Home::default(),
-                    ("clip", &form.context),
-                    &errors
-                )
-            ),
+            Html(renderer.render_with_data(ctx::Home::default(), ("clip", &form.context), &errors)),
         ))
     }
 }
 
 pub fn routes() -> Vec<rocket::Route> {
-    rocket::routes![home, get_clip, new_clip]
+    rocket::routes![home, get_clip, new_clip, submit_clip_password]
 }
