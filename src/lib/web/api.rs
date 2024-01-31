@@ -123,8 +123,9 @@ impl <'r> FromRequest<'r> for ApiKey {
 
 #[rocket::get("/key")]
 pub async fn new_api_key(database: &State<AppDatabase>) -> Result<Json<&str>, ApiError> {
+    println!("new api key");
     let api_key = action::generate_api_key(database.get_pool()).await?;
-    print!("Api Key: {}", api_key.to_base64());
+    println!("Api Key: {}", api_key.to_base64());
     Ok(Json("Api key generated. See logs for details."))
 }
 
@@ -172,7 +173,7 @@ pub async fn update_clip(
 }
 
 pub fn routes() -> Vec<rocket::Route> {
-    rocket::routes!(get_clip, new_clip, update_clip)
+    rocket::routes!(get_clip, new_clip, update_clip, new_api_key)
 }
 
 pub mod catcher {
