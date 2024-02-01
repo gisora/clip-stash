@@ -1,6 +1,7 @@
 use crate::domain::clip::ClipError;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use rocket::form::{self, FromFormField, ValueField};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Title(Option<String>);
@@ -35,5 +36,12 @@ impl FromStr for Title {
     type Err = ClipError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::new(s.to_string()))
+    }
+}
+
+#[rocket::async_trait]
+impl<'r> FromFormField<'r> for Title {
+    fn from_value(field: ValueField<'r>) -> form::Result<'r, Self> {
+        Ok(Self::from_str(field.value).map_err(|e| form::Error::validation(format!("{}", e)))?)
     }
 }
